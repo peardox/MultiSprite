@@ -1,0 +1,21 @@
+Concerning the files...
+
+Sprite_Demo_1.png
+Sprite_Demo_2.png
+Sprite_Demo_3.png
+Sprite_Demo_4.png
+
+These are derivative versions of 'Female_Mage' from one of the many assets libraries available from PV Games
+
+The original artwork is available for purchase with a license for reuse from the following sources
+
+https://pvgames.itch.io/25d-character-pieces
+https://www.patreon.com/PVGames
+
+Modification of this artwork is prohibited 
+
+Public re-distribution without prior authorisation from PV Games is prohibited
+
+The artwork included as part of https://github.com/peardox/MultiSprite is authorised for public re-distribution as part of that source code and asset repository
+
+The artowrk is considered "Demo, not for unauthorized public use"
