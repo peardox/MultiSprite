@@ -30,7 +30,7 @@ Install on a device or use simulator
 
 **Credits**
 
-The artwork Sprite_Demo_1.png, Sprite_Demo_2.png, Sprite_Demo_3.png, Sprite_Demo__4.png are derivative versions of assets from [PV Games](https://pvgames.itch.io) used with authorisation. Please refer to data/license.txt for full details.
+The artwork Sprite_Demo_1.png, Sprite_Demo_2.png, Sprite_Demo_3.png, Sprite_Demo__4.png are derivative versions of assets from [PV Games](https://pvgames.itch.io) used with authorisation. Please refer to [data/license.txt](data/license.txt) for full details.
 
 
 
