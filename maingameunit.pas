@@ -1,9 +1,4 @@
 unit MainGameUnit;
-// {$define filming}
-// {$define autoskip}
-// {$define startblank}
-// {$define usebasemodel}
-{$define usedemo}
 
 {$mode objfpc}{$H+}
 
@@ -33,10 +28,10 @@ type
     fAnimNode: TTimeSensorNode;
   private
     fAction: String;
-    fIsLooped: Boolean;
-    fIsPaused: Boolean;
-    fIsPlaying: Boolean;
-    fLastFrame: TFloatTime;
+    fIsLooped: Boolean; // Used in version with Notifications
+    fIsPaused: Boolean; // Used in version with Notifications
+    fIsPlaying: Boolean; // Used in version with Notifications
+    fLastFrame: TFloatTime; // Used in version with Notifications
   public
     property  Action: String read fAction write fAction;
     property  AnimNode: TTimeSensorNode read fAnimNode write fAnimNode;
@@ -64,16 +59,13 @@ type
   private
     Viewport: TCastleViewport;
     LabelFPS: TCastleLabel;
-    LabelSpare: TCastleLabel;
-    LabelCamPos: TCastleLabel;
-    LabelCamDir: TCastleLabel;
-    LabelCamUp: TCastleLabel;
-    LabelRender: TCastleLabel;
     LabelSprite: TCastleLabel;
+    LabelResize: TCastleLabel;
+    LabelSize: TCastleLabel;
+    LabelRender: TCastleLabel;
   public
     SpriteSet: array of TMultiSprite;
     Stage: TCastleScene;
-    currentSheet: Integer;
     gScale: Single;
     gLimit: Integer;
     gOldWidth: Single;
@@ -84,47 +76,21 @@ type
     procedure Stop; override; // TUIState
     procedure LoadViewport;
     procedure LoadModel(filenames: TStringArray; const ALimit: Integer = 0);
-    procedure LoadBaseModel(filenames: TStringArray; const ALimit: Integer = 0);
-    procedure NextSheet;
     procedure ScaleSheet;
-    function  LoadTextureAtlasImageNodes: TImageTextureNodeArray;
   end;
 
 var
-  AppTime: Int64;
   PrepDone: Boolean;
   CastleApp: TCastleApp;
   RenderReady: Boolean;
-  FrameCount: Integer;
 
 const
-  SecsPerSheet: Integer = 10;
-  ModelFile: Array [0..  {$ifdef startblank}10{$else}9{$endif}] of TStringArray = (
-  {$ifdef startblank}
-  (),
-  {$endif}
-  {$ifdef usedemo}
-  ('castle-data:/character/character_demo_map_1.starling-xml', // 168
-   'castle-data:/character/character_demo_map_2.starling-xml', // 232
-   'castle-data:/character/character_demo_map_3.starling-xml', // 200
-   'castle-data:/character/character_demo_map_4.starling-xml'), //  80
-  {$else}
-  ('castle-data:/character/character_map_1.starling-xml', // 168
-   'castle-data:/character/character_map_2.starling-xml', // 232
-   'castle-data:/character/character_map_3.starling-xml', // 200
-   'castle-data:/character/character_map_4.starling-xml'), //  80
-  {$endif}
-  ('castle-data:/Abberation_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/CarniverousPlant_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/DaemonBone_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/DaemonHowler_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/DaemonInfernalGreater_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/DaemonInfernal_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/Kera_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/Berry_SideViewBattler_Large.starling-xml'),
-  ('castle-data:/Dannon_SideViewBattler_Large.starling-xml'));
-
-procedure Watermark(const InFile: String; const WMFile: String; const OutFile: String);
+  TextureAtlas: TStringArray =
+  ('castle-data:/character_demo_map_1.starling-xml', // 168
+   'castle-data:/character_demo_map_2.starling-xml', // 232
+   'castle-data:/character_demo_map_3.starling-xml', // 200
+   'castle-data:/character_demo_map_4.starling-xml' //  80
+  );
 
 implementation
 {$ifdef cgeapp}
@@ -132,34 +98,6 @@ uses AppInitialization;
 {$else}
 uses GUIInitialization;
 {$endif}
-
-procedure Watermark(const InFile: String; const WMFile: String; const OutFile: String);
-var
-  ImageOut: TRGBAlphaImage;
-  ImageIn: TRGBAlphaImage;
-  ImageWatermark: TRGBAlphaImage;
-  x, y: Integer;
-begin
-  ImageIn := LoadImage(InFile, [TRGBAlphaImage]) as TRGBAlphaImage;
-  ImageWatermark := LoadImage(WMFile, [TRGBAlphaImage]) as TRGBAlphaImage;
-
-  ImageOut := TRGBAlphaImage.Create(ImageIn.Width, ImageIn.Height, 4);
-  ImageOut.Clear(Vector4(0, 0, 0, 0.25));
-  ImageOut.DrawFrom(ImageIn, 0, 0, dmBlendSmart);
-  for y := 0 to (ImageIn.Height div ImageWatermark.Height) - 1 do
-    begin
-      for x := 0 to (ImageIn.Width div ImageWatermark.Width) - 1 do
-        begin
-          ImageOut.DrawFrom(ImageWatermark, x * ImageWatermark.Width, y * ImageWatermark.Height, dmBlendSmart);
-        end;
-    end;
-
-  SaveImage(ImageOut, OutFile);
-
-  FreeAndNil(ImageIn);
-  FreeAndNil(ImageWatermark);
-  FreeAndNil(ImageOut);
-end;
 
 procedure TMultiSprite.AddAnimation(const AAction: String; const ASensor: TTimeSensorNode; const AIsLooped: Boolean = True);
 begin
@@ -178,7 +116,6 @@ begin
           fAnimNode.Stop;
           if not APause then
             begin
-//              Scene.ForceAnimationPose(gAnimNode.X3DName, AFrame, True, True);
               fAnimNode.Start(False, True, AFrame);
               WriteLnLog('Goto (Immediate) : ' + FloatToStr(AFrame) + ' (' + FloatToStr(fAnimNode.ElapsedTimeInCycle) + ')');
             end
@@ -221,12 +158,7 @@ end;
 
 procedure TCastleApp.BootStrap;
 begin
-  if currentSheet >= 0 then
-    {$ifdef usebasemodel}
-    LoadBaseModel(ModelFile[currentSheet], gLimit);
-    {$else}
-    LoadModel(ModelFile[currentSheet], gLimit);
-    {$endif}
+  LoadModel(TextureAtlas, gLimit);
 end;
 
 procedure TCastleApp.CreateLabel(var objLabel: TCastleLabel; const Line: Integer; const BottomUp: Boolean = True);
@@ -256,49 +188,13 @@ begin
 
   InsertFront(Viewport);
 
-  CreateLabel(LabelCamPos, 0, False);
-  CreateLabel(LabelCamDir, 1, False);
-  CreateLabel(LabelCamUp, 2, False);
+  CreateLabel(LabelResize, 0, False);
+  CreateLabel(LabelSize, 1, False);
 
-  CreateLabel(LabelSprite, 3);
-  CreateLabel(LabelSpare, 2);
+  CreateLabel(LabelSprite, 2);
   CreateLabel(LabelFPS, 1);
   CreateLabel(LabelRender, 0);
 end;
-
-function TCastleApp.LoadTextureAtlasImageNodes: TImageTextureNodeArray;
-var
-  sNode: TStream;
-  ImageTextures: TImageTextureNodeArray;
-begin
-  SetLength(ImageTextures, 4);
-  ImageTextures[0] := TImageTextureNode.Create;
-  sNode := download('castle-data:/character/FemaleArcher/Sprite_1.png');
-  ImageTextures[0].LoadFromStream(sNode, 'image/png', 'castle-data:/character/Sprite_1.png');
-
-  ImageTextures[1] := TImageTextureNode.Create;
-  sNode := download('castle-data:/character/FemaleArcher/Sprite_2.png');
-  ImageTextures[1].LoadFromStream(sNode, 'image/png', 'castle-data:/character/Sprite_2.png');
-
-  ImageTextures[2] := TImageTextureNode.Create;
-  sNode := download('castle-data:/character/FemaleArcher/Sprite_3.png');
-  ImageTextures[2].LoadFromStream(sNode, 'image/png', 'castle-data:/character/Sprite_3.png');
-
-  ImageTextures[3] := TImageTextureNode.Create;
-  sNode := download('castle-data:/character/FemaleArcher/Sprite_4.png');
-  ImageTextures[3].LoadFromStream(sNode, 'image/png', 'castle-data:/character/Sprite_4.png');
-
-  //  SaveNode(SpriteSet[SpriteIndex].RootNode, 'castle-data:/model.x3dv');
-
-  Result := ImageTextures;
-end;
-
-// TImageTextureNode.LoadFromStream(const Stream: TStream; const MimeType: String; const UpdateUrl: String);
-// castle-data:/character/Sprite_1.png
-// Load(const Stream: TStream; const BaseUrl: String);
-// LoadNode(const Stream: TStream; BaseUrl: String; const MimeType: String; const NilOnUnrecognizedFormat: boolean = false): TX3DRootNode;
-// application/x-starling-sprite-sheet
-// LoadImage(Stream: TStream; const MimeType: string; const AllowedImageClasses: array of TEncodedImageClass) :TCastleImage;
 
 procedure TCastleApp.LoadModel(filenames: TStringArray; const ALimit: Integer = 0);
 var
@@ -315,21 +211,12 @@ var
   SpriteIndex: Integer;
   ModelIndex: Integer;
   ModelCount: Integer;
-//  itex: TImageTextureNodeArray;
 begin
-//  itex := LoadTextureAtlasImageNodes;
   WWidth := Viewport.Camera.Orthographic.EffectiveWidth;
   if Length(filenames) > 0 then
     begin
       try
         Stage := TCastleScene.Create(nil);
-        {
-        Stage.RootNode.AddChildren(itex[0]);
-        Stage.RootNode.AddChildren(itex[1]);
-        Stage.RootNode.AddChildren(itex[2]);
-        Stage.RootNode.AddChildren(itex[3]);
-        WriteLnLog('Added itexs');
-        }
         Model := TMultiSprite.Create(Application);
 
         for ModelFile := 0 to Length(filenames) - 1 do
@@ -377,9 +264,6 @@ begin
                   (yloc * SpriteSet[SpriteIndex].BoundingBox.SizeY) + yoff,
                   0);
 
-                {$ifdef fulllog}
-                WriteLnLog(IntToStr(SpriteIndex) + ' - ' + IntToStr(Trunc(WWidth / SpriteSet[SpriteIndex].BoundingBox.SizeX)) + ' : ' + IntToStr(xloc) + ' x ' + IntToStr(yloc));
-                {$endif}
                 SpriteSet[SpriteIndex].Start;
 
                 Stage.Add(SpriteSet[SpriteIndex]);
@@ -388,95 +272,16 @@ begin
 
         Model.Free;
 
-        // Stage.Spatial := [ssDynamicCollisions, ssRendering];
         Stage.RenderOptions.MinificationFilter := minNearest;
         Stage.RenderOptions.MagnificationFilter := magNearest;
         Stage.Setup2D;
         Stage.OwnsRootNode := True;
-        // Stage.PrepareResources([prSpatial, prRenderSelf, prRenderClones, prScreenEffects], True, Viewport.PrepareParams);
         Stage.ProcessEvents := True;
         DynamicBatching := True;
 
         Viewport.Items.Add(Stage);
         Viewport.Items.MainScene := Stage;
 
-      except
-        on E : Exception do
-          begin
-            WriteLnLog('Oops #1' + LineEnding + E.ClassName + LineEnding + E.Message);
-           end;
-      end;
-    end;
-  {
-  FreeAndNil(itex[3]);
-  FreeAndNil(itex[2]);
-  FreeAndNil(itex[1]);
-  FreeAndNil(itex[0]);
-  SetLength(itex, 0);
-  }
-end;
-
-procedure TCastleApp.LoadBaseModel(filenames: TStringArray; const ALimit: Integer = 0);
-var
-  Model: TCastleScene;
-  ASensor: TTimeSensorNode;
-  filename: String;
-  SpriteIndex: Integer;
-begin
-  if Length(filenames) > 0 then
-    begin
-      try
-        Stage := TCastleScene.Create(nil);
-        Model := TMultiSprite.Create(Application);
-
-        SetLength(SpriteSet, Length(filenames));
-
-        for SpriteIndex := 0 to Length(filenames) - 1 do
-          begin
-            filename := filenames[SpriteIndex];
-            Model.Load(filename);
-            SpriteSet[SpriteIndex] := Model.Clone(Application) as TMultiSprite;
-            SpriteSet[SpriteIndex].RenderOptions.MinificationFilter := minNearest;
-            SpriteSet[SpriteIndex].RenderOptions.MagnificationFilter := magNearest;
-            SpriteSet[SpriteIndex].Setup2D;
-            SpriteSet[SpriteIndex].ProcessEvents := True;
-            SpriteSet[SpriteIndex].AnimateOnlyWhenVisible := true;
-
-            ASensor := SpriteSet[SpriteIndex].AnimationTimeSensor(0);
-
-            if SpriteIndex = 0 then
-              begin
-                SaveNode(SpriteSet[SpriteIndex].RootNode, 'castle-data:/model.x3dv');
-                WriteLnLog('Saved model');
-              end;
-            Stage.Add(SpriteSet[SpriteIndex]);
-
-            if not(ASensor = Nil) then
-              begin
-                SpriteSet[SpriteIndex].AddAnimation(ASensor.X3DName, ASensor, True);
-                SpriteSet[SpriteIndex].Start;
-                WriteLnLog('Starting animation ' + ASensor.X3DName);
-              end
-            else
-              WriteLnLog('No animations found for ' + filenames[SpriteIndex]);
-          end;
-
-        Model.Free;
-
-        // Stage.Spatial := [ssDynamicCollisions, ssRendering];
-        Stage.RenderOptions.MinificationFilter := minNearest;
-        Stage.RenderOptions.MagnificationFilter := magNearest;
-        Stage.Setup2D;
-        Stage.OwnsRootNode := True;
-        // Stage.PrepareResources([prSpatial, prRenderSelf, prRenderClones, prScreenEffects], True, Viewport.PrepareParams);
-        Stage.ProcessEvents := True;
-        DynamicBatching := True;
-
-        Viewport.Items.Add(Stage);
-        Viewport.Items.MainScene := Stage;
-
-        ScaleSheet;
-        Resize;
       except
         on E : Exception do
           begin
@@ -489,43 +294,20 @@ end;
 procedure TCastleApp.Start;
 begin
   inherited;
-  {$ifdef filming}
-  currentSheet := -1;
-  {$else}
-  {$if defined(ios)}
-  currentSheet := 1;
-  {$elseif defined(android)}
-  currentSheet := 1;
-  {$else}
-  currentSheet := 0;
-  {$endif}
-  {$endif}
-  LogTextureCache := True; // SBDev
+  LogTextureCache := True;
 
   gScale := 0.3375;
   gOldWidth := 0;
   gOldHeight := 0;
   gLimit := 680;
-  FrameCount := 0;
   SpriteSet := nil;
   LoadViewport;
   PrepDone := True;
-{
-  Watermark('castle-data:/character/Sprite_1.png', 'castle-data:/character/demo_overlay.png', 'castle-data:/character/Sprite_Demo_1.png');
-  Watermark('castle-data:/character/Sprite_2.png', 'castle-data:/character/demo_overlay.png', 'castle-data:/character/Sprite_Demo_2.png');
-  Watermark('castle-data:/character/Sprite_3.png', 'castle-data:/character/demo_overlay.png', 'castle-data:/character/Sprite_Demo_3.png');
-  Watermark('castle-data:/character/Sprite_4.png', 'castle-data:/character/demo_overlay.png', 'castle-data:/character/Sprite_Demo_4.png');
-}
 end;
 
 procedure TCastleApp.Stop;
 begin
   inherited;
-end;
-
-function StripFile(AName: String): String;
-begin
-  Result := AName;
 end;
 
 procedure TCastleApp.BeforeRender;
@@ -543,31 +325,17 @@ begin
 
   if not(Length(SpriteSet) = 0) then
     begin
-      LabelSpare.Caption := 'Sprite = ' +
+      LabelSprite.Caption := 'Sprite = ' +
         FormatFloat('####0', SpriteSet[0].BoundingBox.SizeX) +
         ' x ' +
         FormatFloat('####0', SpriteSet[0].BoundingBox.SizeY);
 
-      LabelCamDir.Caption := 'Size : ' +
+      LabelSize.Caption := 'Size : ' +
         Container.Width.ToString + ' x ' +
         Container.Height.ToString + ' (' +
         Viewport.Camera.Orthographic.EffectiveWidth.ToString + ' x ' +
         Viewport.Camera.Orthographic.EffectiveHeight.ToString + ')';
-      {
-      LabelCamUp.Caption := 'Scale : ' +
-        Viewport.Camera.Orthographic.Scale.ToString;
-      LabelSprite.Caption := 'Sprite Scale = ' + FormatFloat('##0.0000', gScale) + ' (' + IntToStr(Length(SpriteSet)) + ' Sprites)';
-      }
     end;
-
-  Inc(FrameCount);
-  {$ifdef autoskip}
-  if FrameCount > (60 * SecsPerSheet) then
-    begin
-      FrameCount := 0;
-      NextSheet;
-    end;
-  {$endif}
 end;
 
 procedure TCastleApp.Render;
@@ -606,7 +374,7 @@ begin
   inherited;
   if Length(SpriteSet) > 0 then
     begin
-      LabelCamPos.Caption := 'Resized : ' +
+      LabelResize.Caption := 'Resized : ' +
         FloatToStr(Viewport.Camera.Orthographic.EffectiveWidth) +
         ' x ' +
         FloatToStr(Viewport.Camera.Orthographic.EffectiveHeight);
@@ -636,28 +404,8 @@ begin
   Result := inherited;
 end;
 
-procedure TCastleApp.NextSheet;
-begin
-  FreeAndNil(Stage);
-  SetLength(SpriteSet, 0);
-  Inc(currentSheet);
-  if currentSheet >= Length(ModelFile) then
-    currentSheet := 0;
-
-  {$ifdef usebasemodel}
-  LoadBaseModel(ModelFile[currentSheet], gLimit);
-  {$else}
-  LoadModel(ModelFile[currentSheet], gLimit);
-  {$endif}
-end;
-
 function TCastleApp.Press(const Event: TInputPressRelease): Boolean;
 begin
-  if Event.Key = keySpace then
-    begin
-      NextSheet;
-    end;
-
   if Event.Key = keyEscape then
     begin
       Application.Terminate;

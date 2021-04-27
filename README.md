@@ -1,5 +1,19 @@
 # MultiSprite
 
+##### Key Bindings
+
+1 - Force all sprites to original size
+
+[UpArrow] - Increase size of all sprites by 10%
+
+[DownArrow] - Decrease size of all sprites by 10%
+
+[ESC] - Quit
+
+S - Screengrab (to data/screengrab.png)
+
+##### Compilation notes
+
 This project is Lazarus, Castle Editor and build-tool friendly
 
 ##### To compile with Lazarus (the only option for MacOS)

@@ -33,7 +33,6 @@ initialization
   { Set ApplicationName early, as our log uses it.
     Optionally you could also set ApplicationProperties.Version here. }
   ApplicationProperties.ApplicationName := 'MultiSprite';
-  AppTime := CastleGetTickCount64;
 
   { Start logging. Do this as early as possible,
     to log information and eventual warnings during initialization.
