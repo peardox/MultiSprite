@@ -28,6 +28,7 @@ type
 
 var
   CastleForm: TCastleForm;
+  AppTime: Int64;
 
 implementation
 {$R *.lfm}
@@ -38,6 +39,7 @@ begin
   {$ifdef darwin}
   WindowState := wsFullScreen;
   {$endif}
+  FirstFrame := False;
   AppTime := CastleGetTickCount64;
   PrepDone := False;
   Profiler.Enabled := true;
@@ -46,7 +48,13 @@ begin
 end;
 
 procedure TCastleForm.FormDestroy(Sender: TObject);
+var
+  i: Integer;
 begin
+//  for i:= 0 to Length(CastleApp.SpriteSet) - 1 do
+//    FreeAndNil(CastleApp.SpriteSet[i]);
+//              SetLength(SpriteSet, SpriteLow + ModelCount);
+
   WriteLnLog('FormDestroy : ' + FormatFloat('####0.000', (CastleGetTickCount64 - AppTime) / 1000) + ' : ');
 end;
 

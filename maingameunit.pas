@@ -58,6 +58,7 @@ type
     function  Release(const Event: TInputPressRelease): Boolean; override; // TUIState
   private
     Viewport: TCastleViewport;
+    LabelFirst: TCastleLabel;
     LabelFPS: TCastleLabel;
     LabelSprite: TCastleLabel;
     LabelResize: TCastleLabel;
@@ -83,15 +84,18 @@ var
   PrepDone: Boolean;
   CastleApp: TCastleApp;
   RenderReady: Boolean;
+  FirstFrame: Boolean;
 
 const
   TextureAtlas: TStringArray =
-  ('castle-data:/character_demo_map_1.starling-xml', // 168
-   'castle-data:/character_demo_map_2.starling-xml', // 232
-   'castle-data:/character_demo_map_3.starling-xml', // 200
-   'castle-data:/character_demo_map_4.starling-xml' //  80
-  );
-
+    ('castle-data:/character_demo_map_1.starling-xml', // 168
+     'castle-data:/character_demo_map_2.starling-xml', // 232
+     'castle-data:/character_demo_map_3.starling-xml', // 200
+     'castle-data:/character_demo_map_4.starling-xml' //  80
+    );
+{
+('castle-data:/test.starling-xml');
+}
 implementation
 {$ifdef cgeapp}
 uses AppInitialization;
@@ -191,6 +195,7 @@ begin
   CreateLabel(LabelResize, 0, False);
   CreateLabel(LabelSize, 1, False);
 
+  CreateLabel(LabelFirst, 3);
   CreateLabel(LabelSprite, 2);
   CreateLabel(LabelFPS, 1);
   CreateLabel(LabelRender, 0);
@@ -346,6 +351,11 @@ begin
     begin
       PrepDone := False;
       BootStrap;
+    end;
+  if Assigned(Stage) and not(FirstFrame) then
+    begin
+      LabelFirst.Caption := 'FirstFrame : ' + FormatFloat('####0.000', (CastleGetTickCount64 - AppTime) / 1000);
+      FirstFrame := True;
     end;
   RenderReady := True;
 end;
