@@ -9,7 +9,7 @@ uses
   {$ifndef cgeapp}
   Forms, Controls, Graphics, Dialogs, CastleControl,
   {$else}
-  CastleWindow,
+//  CastleWindow,
   {$endif}
   CastleControls, CastleColors, CastleUIControls,
   CastleTriangles, CastleShapes, CastleVectors,
@@ -354,7 +354,7 @@ begin
     end;
   if Assigned(Stage) and not(FirstFrame) then
     begin
-      LabelFirst.Caption := 'FirstFrame : ' + FormatFloat('####0.000', (CastleGetTickCount64 - AppTime) / 1000);
+      LabelFirst.Caption := 'FirstFrame : ' + FormatFloat('####0.000', (CastleGetTickCount64 - AppTime) / 1000) + ' secs to load ' + IntToStr(Length(SpriteSet)) + ' sprites' ;
       FirstFrame := True;
     end;
   RenderReady := True;

@@ -9,19 +9,24 @@ uses
   CastleWindow, CastleScene, CastleControls, CastleLog, CastleUIState,
   CastleTimeUtils, CastleApplicationProperties, CastleUIControls, MainGameUnit;
 
+var
+  AppTime: Int64;
+
 procedure ApplicationInitialize;
 
 implementation
 
 var
   Window: TCastleWindowBase;
-  
+
 { One-time initialization of resources. }
 procedure ApplicationInitialize;
 begin
   if not IsLibrary then
     InitializeLog;
   RenderReady := False;
+  FirstFrame := False;
+  AppTime := CastleGetTickCount64;
   PrepDone := False;
   Profiler.Enabled := true;
   CastleApp := TCastleApp.Create(Application);
