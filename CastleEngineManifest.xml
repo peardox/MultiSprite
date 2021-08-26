@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project 
-  name="MultiSpriteApp" 
+  name="MultiSprite" 
   standalone_source="MultiSpriteApp.lpr"
   game_units="AppInitialization"
-  caption="MultiSprite Mobile App"
+  caption="MultiSprite"
   qualified_name="com.peardox.MultiSprite">
   <package>
     <include path="README.txt" />
   </package>
   <icons>
-    <icon path="icon.ico" />
     <icon path="icon.png" />
   </icons>
   <!--

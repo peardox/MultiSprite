@@ -9,7 +9,7 @@ uses
   {$ifndef cgeapp}
   Forms, Controls, Graphics, Dialogs, CastleControl,
   {$else}
-//  CastleWindow,
+  CastleWindow,
   {$endif}
   CastleControls, CastleColors, CastleUIControls,
   CastleTriangles, CastleShapes, CastleVectors,
